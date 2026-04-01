@@ -19,12 +19,12 @@ app.post('/api/run', (req, res) => {
         // Send a mock successful response to the dashboard
         setTimeout(() => {
             const mockData = `
- \033[1;33m[NODE-0 DASHBOARD: ${strategy}]\033[0m
+ \x1b[1;33m[NODE-0 DASHBOARD: ${strategy}]\x1b[0m
  -----------------------------------------------------------------------------------------------
  TIMESTAMP           SIGNAL    ENTRY          FWD-50         VALIDATE                OUTCOME
  -----------------------------------------------------------------------------------------------
- 2023-01-15 08:00    \033[1;32mBUY \033[0m      $21450.50      $23100.00      \033[1;32mCORRECT\033[0m                 PROFIT
- 2023-02-10 12:00    \033[1;31mSELL\033[0m      $24000.20      $22500.00      \033[1;32mCORRECT\033[0m                 PROFIT
+ 2023-01-15 08:00    \x1b[1;32mBUY \x1b[0m      $21450.50      $23100.00      \x1b[1;32mCORRECT\x1b[0m                 PROFIT
+ 2023-02-10 12:00    \x1b[1;31mSELL\x1b[0m      $24000.20      $22500.00      \x1b[1;32mCORRECT\x1b[0m                 PROFIT
  -----------------------------------------------------------------------------------------------
  [MPI-0] success: 2 signals | win rate: 100.0%
             `;
