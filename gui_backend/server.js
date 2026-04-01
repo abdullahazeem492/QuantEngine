@@ -7,6 +7,9 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+// Serve static frontend files from the /gui directory
+app.use(express.static(path.join(__dirname, '..', 'gui')));
+
 // Set to false to enable real execution in WSL2
 const MOCK_RESPONSE = false;
 
