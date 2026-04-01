@@ -93,7 +93,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const signal = parts[2];
                 const entry = parts[3];
                 const forward = parts[4];
-                const outcome = parts[members - 1]; // Outcome is usually the last word
+                const outcome = parts[parts.length - 1]; // Outcome is usually the last word
                 
                 const sigClass = signal === 'BUY' ? 'signal-buy' : 'signal-sell';
                 const outcomeClass = outcome === 'PROFIT' ? 'outcome-profit' : 'outcome-loss';
