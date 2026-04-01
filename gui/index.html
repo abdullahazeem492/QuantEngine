@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QuantEngine | High-Performance Simulation</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>QUANT ENGINE .01</h1>
+            <p style="color: var(--text-secondary); font-size: 0.9rem; margin-top: 10px;">HPC Market Data Simulation Hub</p>
+        </header>
+
+        <div class="grid">
+            <!-- Configuration Panel -->
+            <aside class="panel panel-config">
+                <div class="panel-title">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.1a2 2 0 0 1-1-1.72v-.51a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
+                    <span>CONFIG</span>
+                </div>
+
+                <div class="form-group">
+                    <label for="strategy">TRADING STRATEGY</label>
+                    <select id="strategy">
+                        <option value="golden_cross">Golden Cross (MA)</option>
+                        <option value="rsi">RSI Mean Reversion</option>
+                        <option value="mean_reversion">Bollinger Bands</option>
+                    </select>
+                </div>
+
+                <!-- Strategy Parameters -->
+                <div id="params-container">
+                    <div id="params-golden_cross" class="strategy-params">
+                        <div class="form-group">
+                            <label for="fast_window">FAST WINDOW (BARS)</label>
+                            <input type="number" id="fast_window" value="50">
+                        </div>
+                        <div class="form-group">
+                            <label for="slow_window">SLOW WINDOW (BARS)</label>
+                            <input type="number" id="slow_window" value="200">
+                        </div>
+                    </div>
+
+                    <div id="params-rsi" class="strategy-params" style="display: none;">
+                        <div class="form-group">
+                            <label for="rsi_window">RSI LOOKBACK</label>
+                            <input type="number" id="rsi_window" value="14">
+                        </div>
+                        <div class="form-group">
+                            <label for="rsi_overbought">OVERBOUGHT THRESHOLD</label>
+                            <input type="number" id="rsi_overbought" value="70">
+                        </div>
+                        <div class="form-group">
+                            <label for="rsi_oversold">OVERSOLD THRESHOLD</label>
+                            <input type="number" id="rsi_oversold" value="30">
+                        </div>
+                    </div>
+
+                    <div id="params-mean_reversion" class="strategy-params" style="display: none;">
+                        <div class="form-group">
+                            <label for="bb_window">BOLLINGER WINDOW</label>
+                            <input type="number" id="bb_window" value="20">
+                        </div>
+                        <div class="form-group">
+                            <label for="bb_stddev">STD DEV MULTIPLIER</label>
+                            <input type="number" id="bb_stddev" step="0.1" value="2.0">
+                        </div>
+                    </div>
+                </div>
+
+                <button id="runBtn" class="btn-run">RUN ENGINE</button>
+            </aside>
+
+            <!-- Results Panel -->
+            <main class="panel panel-results">
+                <div class="panel-title">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg>
+                    <span>ANALYTICS DASHBOARD</span>
+                </div>
+
+                <div class="dashboard">
+                    <table id="resultsTable">
+                        <thead>
+                            <tr>
+                                <th>TIMESTAMP</th>
+                                <th>SIGNAL</th>
+                                <th>ENTRY PRICE</th>
+                                <th>FWD-50 PRICE</th>
+                                <th>OUTCOME</th>
+                            </tr>
+                        </thead>
+                        <tbody id="resultsBody">
+                            <tr>
+                                <td colspan="5" style="text-align: center; color: var(--text-secondary); padding: 40px;">
+                                    SIMULATION IDLE
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </main>
+        </div>
+
+        <div class="status-bar">
+            <div>SYSTEM: <span id="sysStatus" class="stat-value">STANDBY</span></div>
+            <div>NODES: <span class="stat-value">MPI-CLUSTER (WSL2)</span></div>
+            <div>THR: <span id="perfValue" class="stat-value">-</span> BARS/SEC</div>
+        </div>
+    </div>
+
+    <script src="main.js"></script>
+</body>
+</html>

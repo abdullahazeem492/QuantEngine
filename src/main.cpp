@@ -1,6 +1,7 @@
 #include <iostream>
 #include <vector>
 #include <chrono>
+#include <string>
 
 #ifdef MPI_AVAILABLE
 #include <mpi.h>
@@ -8,6 +9,28 @@
 
 #include "parser.hpp"
 #include "simulator.hpp"
+#include "config.hpp"
+
+StrategyConfig parse_cli_args(int argc, char** argv) {
+    StrategyConfig config;
+    for (int i = 1; i < argc; ++i) {
+        std::string arg = argv[i];
+        if (arg == "--strategy" && i + 1 < argc) {
+            std::string strat = argv[++i];
+            if (strat == "golden_cross") { config.type = StrategyType::GOLDEN_CROSS; config.name = "Golden Cross"; }
+            else if (strat == "rsi") { config.type = StrategyType::RSI; config.name = "RSI"; }
+            else if (strat == "mean_reversion") { config.type = StrategyType::MEAN_REVERSION; config.name = "Mean Reversion"; }
+        }
+        else if (arg == "--fast-window" && i + 1 < argc) config.fast_window = std::stoi(argv[++i]);
+        else if (arg == "--slow-window" && i + 1 < argc) config.slow_window = std::stoi(argv[++i]);
+        else if (arg == "--rsi-window" && i + 1 < argc) config.rsi_window = std::stoi(argv[++i]);
+        else if (arg == "--rsi-overbought" && i + 1 < argc) config.rsi_overbought = std::stof(argv[++i]);
+        else if (arg == "--rsi-oversold" && i + 1 < argc) config.rsi_oversold = std::stof(argv[++i]);
+        else if (arg == "--bb-window" && i + 1 < argc) config.bollinger_window = std::stoi(argv[++i]);
+        else if (arg == "--bb-stddev" && i + 1 < argc) config.bollinger_stddev = std::stof(argv[++i]);
+    }
+    return config;
+}
 
 int main(int argc, char** argv) {
     int rank = 0, size = 1;
@@ -17,6 +40,8 @@ int main(int argc, char** argv) {
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     MPI_Comm_size(MPI_COMM_WORLD, &size);
 #endif
+
+    StrategyConfig config = parse_cli_args(argc, argv);
 
     if (rank == 0) {
         std::cout << "\033[1;32m" << std::endl;
@@ -29,6 +54,7 @@ int main(int argc, char** argv) {
         std::cout << " \033[0m" << std::endl;
         std::cout << " [MPI-0] (MASTER) quantpdc engine v1.0" << std::endl;
         std::cout << " [MPI-0] (MASTER) nodes: " << size << " | cuda: enabled" << std::endl;
+        std::cout << " [MPI-0] (MASTER) strategy selected: " << config.name << std::endl;
         std::cout << " ------------------------------------------------------------" << std::endl;
         std::cout << " [MPI-0] (MASTER) loading bitcoin dataset..." << std::endl;
     }
@@ -51,7 +77,7 @@ int main(int argc, char** argv) {
         std::cout << " [MPI-" << rank << "] processing index " << start_pos << " to " << end_pos << std::endl;
 
         // running simulation
-        run_strategy_simulation(data, rank, start_pos, end_pos);
+        run_strategy_simulation(data, config, rank, start_pos, end_pos);
     }
 
 #ifdef MPI_AVAILABLE
