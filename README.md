@@ -53,4 +53,6 @@ mpiexec -n 4 build/Release/quantpdc.exe --strategy rsi --rsi-window 14 --rsi-ove
 ```
 
 ---
-**Author**: fa23-bse-091@cuilahore.edu.pk | [GitHub](https://github.com/abdullahazeem492)
+**Authors**: 
+- **fa23-bse-091** | [GitHub](https://github.com/abdullah-153)
+- **fa23-bse-013** | [GitHub](https://github.com/abdullahazeem492)

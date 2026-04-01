@@ -7,8 +7,8 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// Set to true to mock response (useful while WSL/MPI setup is pending)
-const MOCK_RESPONSE = true;
+// Set to false to enable real execution in WSL2
+const MOCK_RESPONSE = false;
 
 app.post('/api/run', (req, res) => {
     const { strategy, fast_window, slow_window, rsi_window, bollinger_window } = req.body;
@@ -40,11 +40,11 @@ app.post('/api/run', (req, res) => {
     if (rsi_window) args.push("--rsi-window", String(rsi_window));
     if (bollinger_window) args.push("--bb-window", String(bollinger_window));
 
-    // The executable path (assuming build directory)
-    const executablePath = path.join(__dirname, '..', 'build', 'Release', 'quantpdc.exe');
-
-    // Run without mpiexec by default for local dev
-    const process = spawn(executablePath, args);
+    // Execution in WSL2
+    // We launch via 'wsl' and run the linux binary
+    const process = spawn('wsl', ['./quantpdc_linux', ...args], {
+        cwd: path.join(__dirname, '..')
+    });
 
     let stdout = '';
     let stderr = '';
