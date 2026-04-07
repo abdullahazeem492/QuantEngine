@@ -22,6 +22,7 @@ struct StrategyConfig {
     float rsi_oversold;
     int bollinger_window;
     float bollinger_stddev;
+    std::string data_path;
 
     StrategyConfig() {
         // Defaults
@@ -34,6 +35,7 @@ struct StrategyConfig {
         rsi_oversold = 30.0f;
         bollinger_window = 20;
         bollinger_stddev = 2.0f;
+        data_path = "data/bitcoin_data.csv";
     }
 };
 

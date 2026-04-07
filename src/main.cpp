@@ -28,6 +28,7 @@ StrategyConfig parse_cli_args(int argc, char** argv) {
         else if (arg == "--rsi-oversold" && i + 1 < argc) config.rsi_oversold = std::stof(argv[++i]);
         else if (arg == "--bb-window" && i + 1 < argc) config.bollinger_window = std::stoi(argv[++i]);
         else if (arg == "--bb-stddev" && i + 1 < argc) config.bollinger_stddev = std::stof(argv[++i]);
+        else if (arg == "--data" && i + 1 < argc) config.data_path = argv[++i];
     }
     return config;
 }
@@ -56,13 +57,13 @@ int main(int argc, char** argv) {
         std::cout << " [MPI-0] (MASTER) nodes: " << size << " | cuda: enabled" << std::endl;
         std::cout << " [MPI-0] (MASTER) strategy selected: " << config.name << std::endl;
         std::cout << " ------------------------------------------------------------" << std::endl;
-        std::cout << " [MPI-0] (MASTER) loading bitcoin dataset..." << std::endl;
+        std::cout << " [MPI-0] (MASTER) loading dataset: " << config.data_path << "..." << std::endl;
     }
 
     auto start_total = std::chrono::high_resolution_clock::now();
 
     // parsing data
-    MarketData data = parse_csv("data/bitcoin_data.csv", rank);
+    MarketData data = parse_csv(config.data_path, rank);
 
     if (data.size > 0) {
         // calculating shards
