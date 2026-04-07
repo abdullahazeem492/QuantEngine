@@ -11,6 +11,7 @@
 #include "simulator.hpp"
 #include "config.hpp"
 
+// Simple CLI Parser
 StrategyConfig parse_cli_args(int argc, char** argv) {
     StrategyConfig config;
     for (int i = 1; i < argc; ++i) {
@@ -36,6 +37,15 @@ StrategyConfig parse_cli_args(int argc, char** argv) {
 int main(int argc, char** argv) {
     int rank = 0, size = 1;
 
+    /* 
+     * MPI Initialization
+     * MPI (Message Passing Interface) allows us to run multiple instances 
+     * of this program across different CPU cores or even different physical 
+     * machines.
+     * 
+     * 'size' = Total number of processes in the cluster.
+     * 'rank' = The unique ID of *this* specific process (0 to size-1).
+     */
 #ifdef MPI_AVAILABLE
     MPI_Init(&argc, &argv);
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
@@ -43,55 +53,38 @@ int main(int argc, char** argv) {
 #endif
 
     StrategyConfig config = parse_cli_args(argc, argv);
-
-    if (rank == 0) {
-        std::cout << "\033[1;32m" << std::endl;
-        std::cout << "  ____  _    _          _   _ _______ _____  _____   _____ " << std::endl;
-        std::cout << " / __ \\| |  | |   /\\   | \\ | |__   __|  __ \\|  __ \\ / ____|" << std::endl;
-        std::cout << "| |  | | |  | |  /  \\  |  \\| |  | |  | |__) | |  | | |     " << std::endl;
-        std::cout << "| |  | | |  | | / /\\ \\ | . ` |  | |  |  ___/| |  | | |     " << std::endl;
-        std::cout << "| |__| | |__| |/ ____ \\| |\\  |  | |  | |    | |__| | |____ " << std::endl;
-        std::cout << " \\___\\_\\\\____//_/    \\_\\_| \\_|  |_|  |_|    |_____/ \\_____|" << std::endl;
-        std::cout << " \033[0m" << std::endl;
-        std::cout << " [MPI-0] (MASTER) quantpdc engine v1.0" << std::endl;
-        std::cout << " [MPI-0] (MASTER) nodes: " << size << " | cuda: enabled" << std::endl;
-        std::cout << " [MPI-0] (MASTER) strategy selected: " << config.name << std::endl;
-        std::cout << " ------------------------------------------------------------" << std::endl;
-        std::cout << " [MPI-0] (MASTER) loading dataset: " << config.data_path << "..." << std::endl;
-    }
-
     auto start_total = std::chrono::high_resolution_clock::now();
 
-    // parsing data
+    // 1. All nodes parse the CSV into memory.
     MarketData data = parse_csv(config.data_path, rank);
 
     if (data.size > 0) {
-        // calculating shards
+        /*
+         * MPI Data Sharding
+         * Instead of every node processing the entire dataset, we divide 
+         * the dataset into equally sized 'shards'.
+         * Node 0 processes the first chunk, Node 1 the second, and so on.
+         * This allows horizontal scaling of the workload.
+         */
         int shard_size = (int)data.size / size;
         int start_pos = rank * shard_size;
         int end_pos = (rank == size - 1) ? (int)data.size : (rank + 1) * shard_size;
 
-        if (rank == 0) {
-            std::cout << " [MPI-0] sharding " << data.size << " bars into " << size << " clusters." << std::endl;
-        }
-        
-        std::cout << " [MPI-" << rank << "] processing index " << start_pos << " to " << end_pos << std::endl;
-
-        // running simulation
+        // 2. Each node runs the CUDA simulation on its specific shard.
         run_strategy_simulation(data, config, rank, start_pos, end_pos);
     }
 
 #ifdef MPI_AVAILABLE
+    // Wait for all nodes to finish their shard before calculating final metrics.
     MPI_Barrier(MPI_COMM_WORLD);
 #endif
 
     auto end_total = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double> diff = end_total - start_total;
 
+    // Rank 0 (Master) outputs the final system performance metric.
     if (rank == 0) {
-        std::cout << " ------------------------------------------------------------" << std::endl;
-        std::cout << " [PERF] throughput: " << (data.size * size) / diff.count() << " bars/sec" << std::endl;
-        std::cout << " [SYS] quantpdc: success." << std::endl;
+        std::cout << "throughput: " << (data.size * size) / diff.count() << " bars/sec" << std::endl;
     }
 
 #ifdef MPI_AVAILABLE

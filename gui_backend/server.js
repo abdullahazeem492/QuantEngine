@@ -28,6 +28,10 @@ const SUPPORTED_ASSETS = [
     { symbol: 'MATICUSDT', name: 'Polygon' }
 ];
 
+// --- VIVA CONFIGURATION ---
+const MPI_NODES = 1; // Set to 4 or 8 to demonstrate speedup
+// -------------------------
+
 // Set to false to enable real execution in WSL2
 const MOCK_RESPONSE = false;
 
@@ -49,7 +53,7 @@ app.get('/api/fetch-data/:symbol', async (req, res) => {
 
         const klines = response.data;
         if (!Array.isArray(klines) || klines.length === 0) throw new Error("Empty data from Binance");
-        
+
         const csvRows = [
             "unix,date,symbol,open,high,low,close,Volume", // Header
             "0,0,0,0,0,0,0,0" // Dummy line 2 to match engine's start_idx = 2
@@ -67,7 +71,7 @@ app.get('/api/fetch-data/:symbol', async (req, res) => {
             const volume = parseFloat(k[5]);
 
             csvRows.push(`${unix},${date},${symbol},${open},${high},${low},${close},${volume}`);
-            
+
             chartData.push({
                 time: Math.floor(unix / 1000),
                 open: open,
@@ -90,7 +94,7 @@ app.get('/api/fetch-data/:symbol', async (req, res) => {
 
 app.post('/api/run', (req, res) => {
     const { strategy, symbol, fast_window, slow_window, rsi_window, bollinger_window } = req.body;
-    
+
     console.log(`[Run Request] Strategy: ${strategy} | Asset: ${symbol}`);
 
     if (MOCK_RESPONSE) {
@@ -101,7 +105,7 @@ app.post('/api/run', (req, res) => {
     }
 
     // IMPORTANT: WSL expects Unix-style relative paths
-    const csvPath = `data/${symbol}.csv`; 
+    const csvPath = `data/${symbol}.csv`;
 
     // Build arguments
     const args = ["--strategy", strategy, "--data", csvPath];
@@ -110,11 +114,11 @@ app.post('/api/run', (req, res) => {
     if (rsi_window) args.push("--rsi-window", String(rsi_window));
     if (bollinger_window) args.push("--bb-window", String(bollinger_window));
 
-    const cmd = `wsl ./quantpdc_linux ${args.join(' ')}`;
+    const cmd = `wsl mpirun -np ${MPI_NODES} --allow-run-as-root ./quantpdc_linux ${args.join(' ')}`;
     console.log(`[Execute] Running: ${cmd}`);
 
-    // Execution
-    const subProcess = spawn('wsl', ['./quantpdc_linux', ...args], {
+    // Execution via MPI Runner
+    const subProcess = spawn('wsl', ['mpirun', '-np', String(MPI_NODES), '--allow-run-as-root', './quantpdc_linux', ...args], {
         cwd: path.join(__dirname, '..')
     });
 

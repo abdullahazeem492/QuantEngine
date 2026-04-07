@@ -79,3 +79,21 @@ The kernel utilizes the GPU's hardware-accelerated math units to perform square 
 
 > [!TIP]
 > During evaluation, highlight that the separation of **Inter-node distribution (MPI)** and **Intra-node acceleration (CUDA)** is what makes this a true "High Performance Computing" (HPC) application.
+
+---
+
+## 6. VIVA PREPARATION: FAQs
+
+### Q1: How do you scale the cluster size (change MPI nodes)?
+**Answer:** The architecture uses a **Centralized Orchestrator** (the Node.js backend). You do not need to change the C++ code to scale. Instead, you modify the `MPI_NODES` constant in `gui_backend/server.js`. The backend then spawns the cluster using `mpirun -np <N>`.
+
+### Q2: How does the C++ code handle different node counts?
+**Answer:** The code is **node-agnostic**. It uses `MPI_Comm_size` to discover the node count at runtime. This allows the same binary to run on 1 node or 100 nodes without recompilation.
+
+### Q3: What is "Data Sharding"?
+**Answer:** It is the process of splitting a large dataset into smaller, independent chunks for each node to process. In our engine, we use *Static Partitioning*: 
+`int shard_size = total_size / num_nodes;`
+`int start_pos = rank * shard_size;`
+
+---
+*Created for PDC Evaluation 2026*

@@ -172,8 +172,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         } else {
             console.log(`Parsed ${dataRows.length} signal rows.`);
             dataRows.forEach(row => {
-                const cleanRow = row.replace(/\u001b\[[0-9;]*m/g, '').trim();
-                const parts = cleanRow.split(/\s+/);
+                const parts = row.trim().split(/\s+/);
                 
                 // C++ Format: TIMESTAMP (parts 0,1) SIGNAL (2) ENTRY (3)
                 const timestampStr = `${parts[0]} ${parts[1]}`;

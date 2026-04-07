@@ -2,55 +2,13 @@
 #include <chrono>
 #include <cmath>
 #include <fstream>
-#include <iostream>
 #include <sstream>
 
 #ifdef _OPENMP
 #include <omp.h>
 #endif
 
-// fast string to float
-inline float fast_atof(const char *p) {
-  float r = 0.0f;
-  bool neg = false;
-  if (*p == '-') {
-    neg = true;
-    ++p;
-  }
-  while (*p >= '0' && *p <= '9') {
-    r = (r * 10.0f) + (*p - '0');
-    ++p;
-  }
-  if (*p == '.') {
-    float f = 0.0f;
-    int n = 0;
-    ++p;
-    while (*p >= '0' && *p <= '9') {
-      f = (f * 10.0f) + (*p - '0');
-      ++p;
-      ++n;
-    }
-    r += f / std::pow(10.0f, n);
-  }
-  if (*p == 'e' || *p == 'E') {
-    ++p;
-    int e = 0;
-    bool eneg = false;
-    if (*p == '-') {
-      eneg = true;
-      ++p;
-    } else if (*p == '+') {
-      ++p;
-    }
-    while (*p >= '0' && *p <= '9') {
-      e = (e * 10) + (*p - '0');
-      ++p;
-    }
-    r *= std::pow(10.0f, eneg ? -e : e);
-  }
-  return neg ? -r : r;
-}
-
+// Parses a CSV file into a MarketData Structure of Arrays (SoA)
 MarketData parse_csv(const std::string &filename, int rank) {
   MarketData data;
   std::ifstream file(filename);
@@ -60,7 +18,7 @@ MarketData parse_csv(const std::string &filename, int rank) {
   std::vector<std::string> lines;
   std::string line;
 
-  // loading lines
+  // Read all lines into memory
   while (std::getline(file, line)) {
     if (!line.empty())
       lines.push_back(line);
@@ -71,15 +29,11 @@ MarketData parse_csv(const std::string &filename, int rank) {
   if (num_lines == 0)
     return data;
 
+  // Skip headers and dummy rows (start at index 2)
   size_t start_idx = 2;
   size_t count = num_lines - start_idx;
 
-  if (rank == 0) {
-#ifdef _OPENMP
-    std::cout << " [PARS] openmp: parsing " << count << " rows." << std::endl;
-#endif
-  }
-
+  // Allocate memory for the SoA
   data.dates.resize(count);
   data.timestamps.resize(count);
   data.open.resize(count);
@@ -89,32 +43,50 @@ MarketData parse_csv(const std::string &filename, int rank) {
   data.volume.resize(count);
   data.size = count;
 
-// parallel parse
-#pragma omp parallel for
+  /* 
+   * OpenMP Parallel For Loop
+   * 
+   * This directive instructs the compiler to divide the loop iterations 
+   * across multiple CPU threads. Since parsing independent CSV rows has 
+   * no data dependencies, it is perfectly suited for multi-core parallelism.
+   */
+  #pragma omp parallel for
   for (long long i = (long long)start_idx; i < (long long)num_lines; ++i) {
     const std::string &row = lines[i];
     size_t idx = (size_t)(i - start_idx);
     std::stringstream ss(row);
     std::string token;
 
+    // Unix Timestamp
     std::getline(ss, token, ',');
     try {
       data.timestamps[idx] = std::stoll(token);
     } catch (...) {
       data.timestamps[idx] = 0;
     }
+    
+    // Human-readable Date
     std::getline(ss, data.dates[idx], ',');
-    std::getline(ss, token, ','); // symbol
+    
+    // Symbol (skipped, handled by backend)
+    std::getline(ss, token, ','); 
+    
+    // Open, High, Low, Close, Volume
+    // Using std::stof for simple, readable float parsing
     std::getline(ss, token, ',');
-    data.open[idx] = fast_atof(token.c_str());
+    data.open[idx] = std::stof(token);
+    
     std::getline(ss, token, ',');
-    data.high[idx] = fast_atof(token.c_str());
+    data.high[idx] = std::stof(token);
+    
     std::getline(ss, token, ',');
-    data.low[idx] = fast_atof(token.c_str());
+    data.low[idx] = std::stof(token);
+    
     std::getline(ss, token, ',');
-    data.close[idx] = fast_atof(token.c_str());
+    data.close[idx] = std::stof(token);
+    
     std::getline(ss, token, ',');
-    data.volume[idx] = fast_atof(token.c_str());
+    data.volume[idx] = std::stof(token);
   }
 
   return data;
